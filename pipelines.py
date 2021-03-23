@@ -8,6 +8,7 @@
 from pymongo import MongoClient
 from zhihu_user.items import UserInfoItem
 from zhihu_user.items import UserActionItem
+from zhihu_user.items import AnswerItem
 
 
 class ZhihuUserPipeline:
@@ -24,10 +25,11 @@ class ZhihuUserPipeline:
         # 连接到数据库
         self.client = MongoClient(self.mongo_uri)
         # 连接到指定的数据库
-        zhihu_userDB = self.client['zhihu_userDB']
+        zhihu_DB = self.client['Zhihu_DB']
         # 连接到指定表
-        self.info_collection = zhihu_userDB['user_info']
-        self.action_collection = zhihu_userDB['user_action']
+        self.info_collection = zhihu_DB['user_info']
+        self.action_collection = zhihu_DB['user_action']
+        self.answer_cllection = zhihu_DB['answers']
 
     def close_spider(self, spider):
         self.client.close()
@@ -40,3 +42,6 @@ class ZhihuUserPipeline:
         elif isinstance(item, UserActionItem):
             self.action_collection.update({'id': item['action_id']}, {'$set': item}, True)
             print('user_action', item['action_id'], '爬取成功')
+        elif isinstance(item, AnswerItem):
+            self.answer_cllection.update({'id': item['answer_id']}, {'$set': item}, True)
+            print('answer', item['answer_id'], '爬取成功')

@@ -4,6 +4,7 @@ import time
 from bs4 import BeautifulSoup
 from zhihu_user.items import UserInfoItem
 from zhihu_user.items import UserActionItem
+from zhihu_user.items import AnswerItem
 import datetime
 from zhihu_user.settings import DATETIME_FORMAT, DATE_FORMAT
 
@@ -21,6 +22,8 @@ class ZhihuUserspiderSpider(scrapy.Spider):
     followers_url = 'https://www.zhihu.com/people/{user}/followers?page={page}'
     # 用户动态的url
     user_action_url = "https://www.zhihu.com/api/v3/moments/{user}/activities?"
+
+    answers_url = "https://www.zhihu.com/api/v4/questions/{question_id}/answers?include=data%5B%2A%5D.is_normal%2Cadmin_closed_comment%2Creward_info%2Cis_collapsed%2Cannotation_action%2Cannotation_detail%2Ccollapse_reason%2Cis_sticky%2Ccollapsed_by%2Csuggest_edit%2Ccomment_count%2Ccan_comment%2Ccontent%2Ceditable_content%2Cattachment%2Cvoteup_count%2Creshipment_settings%2Ccomment_permission%2Ccreated_time%2Cupdated_time%2Creview_info%2Crelevant_info%2Cquestion%2Cexcerpt%2Cis_labeled%2Cpaid_info%2Cpaid_info_content%2Crelationship.is_authorized%2Cis_author%2Cvoting%2Cis_thanked%2Cis_nothelp%2Cis_recognized%3Bdata%5B%2A%5D.mark_infos%5B%2A%5D.url%3Bdata%5B%2A%5D.author.follower_count%2Cbadge%5B%2A%5D.topics%3Bdata%5B%2A%5D.settings.table_of_content.enabled&limit=5&offset=5&platform=desktop"
 
     def start_requests(self):
         yield scrapy.Request(self.user_url.format(user=self.start_user), headers={
@@ -156,9 +159,11 @@ class ZhihuUserspiderSpider(scrapy.Spider):
                     useraction_item['target_question_author_id'] = action['target']['question']['author']['id']
                     useraction_item['target_question_author_name'] = action['target']['question']['author']['name']
                     useraction_item['target_question_author_url'] = action['target']['question']['author']['url']
-                    useraction_item['target_question_title'] = action['target']['question']['id']
+                    useraction_item['target_question_id'] = action['target']['question']['id']
                     useraction_item['target_question_title'] = action['target']['question']['title']
                     useraction_item['target_question_url'] = action['target']['question']['url']
+                    yield scrapy.Request(self.answers_url.format(question_id=useraction_item['target_question_id']),
+                                         callback=self.parse_answer)
                 elif useraction_item['verb'] == "QUESTION_FOLLOW" or useraction_item['verb'] == "QUESTION_CREATE":
                     # “添加问题”与“关注问题”的数据解析方式相同，target_question的信息=target本身
                     # 内容的创作时间
@@ -185,7 +190,7 @@ class ZhihuUserspiderSpider(scrapy.Spider):
                     useraction_item['target_question_author_id'] = None
                     useraction_item['target_question_author_name'] = None
                     useraction_item['target_question_author_url'] = None
-                    useraction_item['target_question_title'] = None
+                    useraction_item['target_question_id'] = None
                     useraction_item['target_question_title'] = None
                     useraction_item['target_question_url'] = None
                 else:
@@ -277,3 +282,38 @@ class ZhihuUserspiderSpider(scrapy.Spider):
                 page=str(int(page_current.text) + 1))
             # 获取下一页的地址然后通过yield继续返回Request请求，继续请求自己再次获取下页中的信息
             yield scrapy.Request(next_page, self.parse_followers)
+
+    def parse_answer(self, response):
+        """
+                解析答案页面，提取答案信息
+                :param response:
+                :return:
+                """
+        # 处理question的answer
+        ans_json = json.loads(response.text)
+        is_end = ans_json['paging']['is_end']
+        next_url = ans_json['paging']['next']
+
+        # 提取answer的具体字段
+        for answer in ans_json['data']:
+            answer_item = AnswerItem()
+
+            answer_item["answer_id"] = answer["id"]
+            answer_item["answer_url"] = answer["url"]
+            answer_item["question_id"] = answer["question"]["id"]
+            answer_item["question_title"] = answer["question"]["title"]
+            answer_item["author_id"] = answer["author"]["id"] if "id" in answer["author"] else None
+            answer_item["author_name"] = answer["author"]["name"] if "name" in answer["author"] else None
+            answer_item["content"] = answer["content"] if "content" in answer else None
+            answer_item["praise_num"] = answer["voteup_count"]
+            answer_item["comments_num"] = answer["comment_count"]
+            answer_item["create_time"] = datetime.datetime.fromtimestamp(answer["created_time"]).strftime(
+                DATETIME_FORMAT)
+            answer_item["update_time"] = datetime.datetime.fromtimestamp(answer["updated_time"]).strftime(
+                DATETIME_FORMAT)
+            answer_item["crawl_time"] = datetime.datetime.now().strftime(DATETIME_FORMAT)
+
+            yield answer_item
+
+        if not is_end:
+            yield scrapy.Request(next_url, callback=self.parse_answer)

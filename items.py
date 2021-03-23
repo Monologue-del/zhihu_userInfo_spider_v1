@@ -77,3 +77,21 @@ class UserActionItem(scrapy.Item):
     target_question_title = Field()
     target_question_url = Field()
     crawl_time = Field()
+
+
+class AnswerItem(scrapy.Item):
+    """
+    答案信息
+    """
+    answer_id = scrapy.Field()
+    answer_url = scrapy.Field()
+    question_id = scrapy.Field()
+    question_title = scrapy.Field()
+    author_id = scrapy.Field()
+    author_name = scrapy.Field()
+    content = scrapy.Field()
+    praise_num = scrapy.Field()
+    comments_num = scrapy.Field()
+    create_time = scrapy.Field()
+    crawl_time = scrapy.Field()
+    update_time = scrapy.Field()
