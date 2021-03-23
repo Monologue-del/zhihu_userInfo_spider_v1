@@ -102,6 +102,3 @@ DATE_FORMAT = "%Y-%m-%d"
 
 # 开启MongoDB服务：mongod -dbpath D:\MongoDB\data\db
 MONGO_URI = 'localhost:27017'
-
-# 代理ip
-PROXIES = ['https://125.87.84.204:4567', 'https://106.6.233.14:4545', 'https://110.85.163.227:4542']

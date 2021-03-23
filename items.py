@@ -57,6 +57,7 @@ class UserActionItem(scrapy.Item):
     用户动态
     """
     action_id = Field()
+    actor_id = Field()
     actor_name = Field()
     actor_url = Field()
     action_text = Field()
@@ -66,10 +67,13 @@ class UserActionItem(scrapy.Item):
     target_created_time = Field()
     target_id = Field()
     target_url = Field()
+    target_author_id = Field()
     target_author_name = Field()
     target_author_url = Field()
+    target_question_author_id = Field()
     target_question_author_name = Field()
     target_question_author_url = Field()
+    target_question_id = Field()
     target_question_title = Field()
     target_question_url = Field()
     crawl_time = Field()

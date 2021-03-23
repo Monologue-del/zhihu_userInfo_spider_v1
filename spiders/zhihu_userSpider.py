@@ -26,7 +26,7 @@ class ZhihuUserspiderSpider(scrapy.Spider):
         yield scrapy.Request(self.user_url.format(user=self.start_user), headers={
             'User-agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:51.0) Gecko/20100101 Firefox/51.0'},
                              callback=self.parse_user)
-        time.sleep(1)
+        # time.sleep(1)
 
     def parse_user(self, response):
         """
@@ -113,13 +113,13 @@ class ZhihuUserspiderSpider(scrapy.Spider):
         if result["following_count"] > 0:
             yield scrapy.Request(self.followees_url.format(user=result.get("url_token"), page=1),
                                  callback=self.parse_followees)
-            time.sleep(1)
+            # time.sleep(1)
 
         # 判断粉丝列表是否为空
         if result["follower_count"] > 0:
             yield scrapy.Request(self.followers_url.format(user=result.get("url_token"), page=1),
                                  callback=self.parse_followers)
-            time.sleep(1)
+            # time.sleep(1)
 
     def parse_action(self, response):
         """
@@ -137,6 +137,7 @@ class ZhihuUserspiderSpider(scrapy.Spider):
             for action in action_json['data']:
                 useraction_item = UserActionItem()
                 useraction_item['action_id'] = action['id']
+                useraction_item['actor_id'] = action['actor']['id']
                 useraction_item['actor_name'] = action['actor']['name']
                 useraction_item['actor_url'] = action['actor']['url']
                 useraction_item['action_text'] = action['action_text']
@@ -149,10 +150,13 @@ class ZhihuUserspiderSpider(scrapy.Spider):
                     useraction_item['target_created_time'] = datetime.datetime.fromtimestamp(
                         action['target']['created_time']).strftime(DATETIME_FORMAT)
                     useraction_item['target_excerpt'] = action['target']['excerpt']
+                    useraction_item['target_author_id'] = action['target']['author']['id']
                     useraction_item['target_author_name'] = action['target']['author']['name']
                     useraction_item['target_author_url'] = action['target']['author']['url']
+                    useraction_item['target_question_author_id'] = action['target']['question']['author']['id']
                     useraction_item['target_question_author_name'] = action['target']['question']['author']['name']
                     useraction_item['target_question_author_url'] = action['target']['question']['author']['url']
+                    useraction_item['target_question_title'] = action['target']['question']['id']
                     useraction_item['target_question_title'] = action['target']['question']['title']
                     useraction_item['target_question_url'] = action['target']['question']['url']
                 elif useraction_item['verb'] == "QUESTION_FOLLOW" or useraction_item['verb'] == "QUESTION_CREATE":
@@ -162,10 +166,13 @@ class ZhihuUserspiderSpider(scrapy.Spider):
                         action['target']['created']).strftime(DATETIME_FORMAT)
                     # target（问题）的信息就是target_question的信息
                     useraction_item['target_excerpt'] = action['target']['excerpt']
+                    useraction_item['target_author_id'] = action['target']['author']['id']
                     useraction_item['target_author_name'] = action['target']['author']['name']
                     useraction_item['target_author_url'] = action['target']['author']['url']
+                    useraction_item['target_question_author_id'] = action['target']['author']['id']
                     useraction_item['target_question_author_name'] = action['target']['author']['name']
                     useraction_item['target_question_author_url'] = action['target']['author']['url']
+                    useraction_item['target_question_id'] = action['target']['id']
                     useraction_item['target_question_title'] = action['target']['title']
                     useraction_item['target_question_url'] = action['target']['url']
                 elif useraction_item['verb'] == "TOPIC_FOLLOW":
@@ -175,8 +182,10 @@ class ZhihuUserspiderSpider(scrapy.Spider):
                     # “关注话题”行为没有target信息
                     useraction_item['target_author_name'] = None
                     useraction_item['target_author_url'] = None
+                    useraction_item['target_question_author_id'] = None
                     useraction_item['target_question_author_name'] = None
                     useraction_item['target_question_author_url'] = None
+                    useraction_item['target_question_title'] = None
                     useraction_item['target_question_title'] = None
                     useraction_item['target_question_url'] = None
                 else:
