@@ -57,6 +57,11 @@ DEFAULT_REQUEST_HEADERS = {
 DOWNLOADER_MIDDLEWARES = {
    'zhihu_user.middlewares.ProxyMiddleware': 543,
 }
+# v2
+# DOWNLOADER_MIDDLEWARES = {
+#    'zhihu_user.middlewares.ProxyMiddleware1': 543,
+# }
+
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html

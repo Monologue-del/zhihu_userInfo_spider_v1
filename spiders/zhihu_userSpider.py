@@ -144,35 +144,49 @@ class ZhihuUserspiderSpider(scrapy.Spider):
 
                 # 只爬取“赞同回答”、“回答问题”、“添加问题”、“关注问题”四种情形，其余情形跳过循环
                 if useraction_item['verb'] == "ANSWER_VOTE_UP" or useraction_item['verb'] == "ANSWER_CREATE":
-                    # “赞同回答”与“回答问题”的数据爬取方式相同，“问题提出者信息”+“问题信息”
+                    # “赞同回答”与“回答问题”的数据解析方式相同，“问题提出者信息”+“问题信息”
                     # 内容的创作时间
                     useraction_item['target_created_time'] = datetime.datetime.fromtimestamp(
                         action['target']['created_time']).strftime(DATETIME_FORMAT)
+                    useraction_item['target_excerpt'] = action['target']['excerpt']
+                    useraction_item['target_author_name'] = action['target']['author']['name']
+                    useraction_item['target_author_url'] = action['target']['author']['url']
                     useraction_item['target_question_author_name'] = action['target']['question']['author']['name']
                     useraction_item['target_question_author_url'] = action['target']['question']['author']['url']
                     useraction_item['target_question_title'] = action['target']['question']['title']
                     useraction_item['target_question_url'] = action['target']['question']['url']
                 elif useraction_item['verb'] == "QUESTION_FOLLOW" or useraction_item['verb'] == "QUESTION_CREATE":
-                    # “添加问题”与“关注问题”的数据爬取方式相同，target_question的信息=target本身
+                    # “添加问题”与“关注问题”的数据解析方式相同，target_question的信息=target本身
                     # 内容的创作时间
                     useraction_item['target_created_time'] = datetime.datetime.fromtimestamp(
                         action['target']['created']).strftime(DATETIME_FORMAT)
                     # target（问题）的信息就是target_question的信息
+                    useraction_item['target_excerpt'] = action['target']['excerpt']
+                    useraction_item['target_author_name'] = action['target']['author']['name']
+                    useraction_item['target_author_url'] = action['target']['author']['url']
                     useraction_item['target_question_author_name'] = action['target']['author']['name']
                     useraction_item['target_question_author_url'] = action['target']['author']['url']
                     useraction_item['target_question_title'] = action['target']['title']
                     useraction_item['target_question_url'] = action['target']['url']
+                elif useraction_item['verb'] == "TOPIC_FOLLOW":
+                    # “关注话题”的数据解析
+                    useraction_item['target_excerpt'] = action['target']['name']
+                    useraction_item['target_created_time'] = None
+                    # “关注话题”行为没有target信息
+                    useraction_item['target_author_name'] = None
+                    useraction_item['target_author_url'] = None
+                    useraction_item['target_question_author_name'] = None
+                    useraction_item['target_question_author_url'] = None
+                    useraction_item['target_question_title'] = None
+                    useraction_item['target_question_url'] = None
                 else:
                     continue
 
-                useraction_item['target_author_name'] = action['target']['author']['name']
-                useraction_item['target_author_url'] = action['target']['author']['url']
                 useraction_item['target_url'] = action['target']['url']
-                # 动态的时间
+                useraction_item['target_id'] = action['target']['id']
+                # 用户动态的时间
                 useraction_item['action_time'] = datetime.datetime.fromtimestamp(action['created_time']).strftime(
                     DATETIME_FORMAT)
-                useraction_item['target_excerpt'] = action['target']['excerpt']
-                useraction_item['target_id'] = action['target']['id']
                 useraction_item['crawl_time'] = datetime.datetime.now().strftime(DATETIME_FORMAT)
 
                 yield useraction_item
